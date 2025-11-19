@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: app-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./app:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+
+  php:
+    image: thecodingmachine/php:8.2-v4-fpm
+    container_name: app-php
+    restart: unless-stopped
+    environment:
+      PHP_EXTENSIONS: pdo_mysql,mysqli,mbstring,bcmath
+      PHP_INI_MEMORY_LIMIT: 512M
+    volumes:
+      - ./app:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    container_name: app-mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw123
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: app1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpw123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:alpine
+    container_name: app-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  queue:
+    image: thecodingmachine/php:8.2-v4-fpm
+    container_name: app-queue
+    restart: unless-stopped
+    environment:
+      PHP_EXTENSIONS: pdo_mysql,mysqli,mbstring,bcmath
+      PHP_INI_MEMORY_LIMIT: 512M
+    volumes:
+      - ./app:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # queue worker
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+
+volumes:
+  mysql_data:
