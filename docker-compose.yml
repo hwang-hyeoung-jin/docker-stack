@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   nginx:
     image: nginx:alpine
@@ -12,14 +14,14 @@ services:
       - php
 
   php:
-    build:
-      context: .              # 현재 폴더 전체를 build context로
-      dockerfile: php.Dockerfile
+    image: thecodingmachine/php:8.2-v5-fpm
     container_name: app-php
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ./app:/var/www/html
+    environment:
+      PHP_EXTENSIONS: pdo_mysql,mysqli,mbstring,bcmath,zip,redis
     depends_on:
       mysql:
         condition: service_healthy
@@ -61,14 +63,14 @@ services:
       start_period: 10s
 
   queue:
-    build:
-      context: .
-      dockerfile: php.Dockerfile
+    image: thecodingmachine/php:8.2-v5-fpm
     container_name: app-queue
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ./app:/var/www/html
+    environment:
+      PHP_EXTENSIONS: pdo_mysql,mysqli,mbstring,bcmath,zip,redis
     depends_on:
       mysql:
         condition: service_healthy

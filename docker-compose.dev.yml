@@ -1,0 +1,14 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: php.Dockerfile
+    image: local-php-laravel
+    container_name: app-php
+
+  queue:
+    build:
+      context: .
+      dockerfile: php.Dockerfile
+    image: local-php-laravel
+    container_name: app-queue
