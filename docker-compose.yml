@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   nginx:
     image: nginx:alpine
@@ -14,15 +12,14 @@ services:
       - php
 
   php:
-    image: thecodingmachine/php:8.2-v4-fpm
+    build:
+      context: .              # 현재 폴더 전체를 build context로
+      dockerfile: php.Dockerfile
     container_name: app-php
     restart: unless-stopped
-    environment:
-      PHP_EXTENSIONS: pdo_mysql,mysqli,mbstring,bcmath
-      PHP_INI_MEMORY_LIMIT: 512M
+    working_dir: /var/www/html
     volumes:
       - ./app:/var/www/html
-    working_dir: /var/www/html
     depends_on:
       mysql:
         condition: service_healthy
@@ -64,21 +61,19 @@ services:
       start_period: 10s
 
   queue:
-    image: thecodingmachine/php:8.2-v4-fpm
+    build:
+      context: .
+      dockerfile: php.Dockerfile
     container_name: app-queue
     restart: unless-stopped
-    environment:
-      PHP_EXTENSIONS: pdo_mysql,mysqli,mbstring,bcmath
-      PHP_INI_MEMORY_LIMIT: 512M
+    working_dir: /var/www/html
     volumes:
       - ./app:/var/www/html
-    working_dir: /var/www/html
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # queue worker
     command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
 
 volumes:
