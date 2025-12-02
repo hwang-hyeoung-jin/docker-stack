@@ -13,3 +13,7 @@ Route::get('/queue-test', function () {
     TestQueueJob::dispatch('형진님 큐 테스트!');
     return '큐에 Job 넣었습니다.';
 });
+
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
